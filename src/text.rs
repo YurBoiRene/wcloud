@@ -1,5 +1,5 @@
-use ab_glyph::{point, Font, Glyph, Point, PxScale, ScaleFont, FontVec};
-use image::{GrayImage, Luma, Pixel, Rgb, Rgba, RgbaImage, RgbImage};
+use ab_glyph::{point, Font, FontVec, Glyph, Point, PxScale, ScaleFont};
+use image::{GrayImage, Luma, Pixel, Rgba, RgbaImage};
 
 #[derive(Clone, Debug)]
 pub struct GlyphData {
@@ -45,10 +45,15 @@ pub fn draw_glyphs_to_rgba_buffer(
 
             outlined.draw(|x, y, v| {
                 let (final_x, final_y) = if !rotate {
-                    (point.x as u32 + bounds.min.x as u32 + x, point.y as u32 + bounds.min.y as u32 + y)
-                }
-                else {
-                    (y + point.x as u32 + bounds.min.y as u32, width + point.y as u32 - bounds.min.x as u32 - x)
+                    (
+                        point.x as u32 + bounds.min.x as u32 + x,
+                        point.y as u32 + bounds.min.y as u32 + y,
+                    )
+                } else {
+                    (
+                        y + point.x as u32 + bounds.min.y as u32,
+                        width + point.y as u32 - bounds.min.x as u32 - x,
+                    )
                 };
 
                 let px = buffer.get_pixel_mut(final_x, final_y);
@@ -84,10 +89,15 @@ pub fn draw_glyphs_to_gray_buffer(
                 }
 
                 let (final_x, final_y) = if !rotate {
-                    (point.x as u32 + bounds.min.x as u32 + x, point.y as u32 + bounds.min.y as u32 + y)
-                }
-                else {
-                    (y + point.x as u32 + bounds.min.y as u32, width + point.y as u32 - bounds.min.x as u32 - x)
+                    (
+                        point.x as u32 + bounds.min.x as u32 + x,
+                        point.y as u32 + bounds.min.y as u32 + y,
+                    )
+                } else {
+                    (
+                        y + point.x as u32 + bounds.min.y as u32,
+                        width + point.y as u32 - bounds.min.x as u32 - x,
+                    )
                 };
 
                 let px = buffer.get_pixel_mut(final_x, final_y);
