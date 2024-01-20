@@ -1,9 +1,9 @@
 use ab_glyph::{point, FontVec, Point, PxScale};
 use image::{GrayImage, Luma, Rgba, RgbaImage};
 use palette::{Hsl, IntoColor, Pixel, Srgb};
-use std::fs;
 use std::path::PathBuf;
 use std::process::exit;
+use std::{collections::HashMap, fs};
 use woff2::decode::{convert_woff2_to_ttf, is_woff2};
 
 mod text;
@@ -201,6 +201,26 @@ impl WordCloud {
         }
     }
 
+    pub fn generate_from_frequencies(
+        &self,
+        map: HashMap<&str, usize>,
+        size: WordCloudSize,
+        scale: f32,
+    ) -> RgbaImage {
+        self.generate_from_frequencies_with_color_func(map, size, scale, random_color_rgba)
+    }
+    pub fn generate_from_frequencies_with_color_func(
+        &self,
+        map: HashMap<&str, usize>,
+        size: WordCloudSize,
+        scale: f32,
+        color_func: fn(&Word, &mut WyRand) -> Rgba<u8>,
+    ) -> RgbaImage {
+        let words = self.tokenizer.get_normalized_word_frequencies_map(map);
+
+        self.generate_with_color_func(words, size, scale, color_func)
+    }
+
     pub fn generate_from_text(&self, text: &str, size: WordCloudSize, scale: f32) -> RgbaImage {
         self.generate_from_text_with_color_func(text, size, scale, random_color_rgba)
     }
@@ -212,8 +232,18 @@ impl WordCloud {
         scale: f32,
         color_func: fn(&Word, &mut WyRand) -> Rgba<u8>,
     ) -> RgbaImage {
-        let words = self.tokenizer.get_normalized_word_frequencies(text);
+        let words = self.tokenizer.get_normalized_word_frequencies_text(text);
 
+        self.generate_with_color_func(words, size, scale, color_func)
+    }
+
+    fn generate_with_color_func(
+        &self,
+        words: Vec<(&str, f32)>,
+        size: WordCloudSize,
+        scale: f32,
+        color_func: fn(&Word, &mut WyRand) -> Rgba<u8>,
+    ) -> RgbaImage {
         let (mut summed_area_table, mut gray_buffer) = match size {
             WordCloudSize::FromDimensions { width, height } => {
                 let buf = GrayImage::from_pixel(width, height, Luma([0]));

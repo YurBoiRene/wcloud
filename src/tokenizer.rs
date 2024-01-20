@@ -91,6 +91,10 @@ impl<'a> Tokenizer {
             .collect()
     }
 
+    fn get_max(map: &HashMap<&'a str, usize>) -> usize {
+        *map.values().max().expect("Can't get max frequency")
+    }
+
     fn get_word_frequencies(&'a self, text: &'a str) -> (HashMap<&'a str, usize>, usize) {
         let mut frequencies = HashMap::new();
 
@@ -102,17 +106,32 @@ impl<'a> Tokenizer {
         }
 
         let common_cased_map = Self::keep_common_case(&frequencies);
-        let max_freq = *common_cased_map
-            .values()
-            .max()
-            .expect("Can't get max frequency");
+        let max_freq = Self::get_max(&common_cased_map);
 
         (common_cased_map, max_freq)
     }
 
-    pub fn get_normalized_word_frequencies(&'a self, text: &'a str) -> Vec<(&'a str, f32)> {
-        let (frequencies, max_freq) = self.get_word_frequencies(text);
+    fn get_word_frequencies_map(
+        &'a self,
+        map: HashMap<&'a str, usize>,
+    ) -> (HashMap<&'a str, usize>, usize) {
+        let max = Self::get_max(&map);
+        (map, max)
+    }
 
+    pub fn get_normalized_word_frequencies_map(
+        &'a self,
+        map: HashMap<&'a str, usize>,
+    ) -> Vec<(&'a str, f32)> {
+        let (frequencies, max_freq) = self.get_word_frequencies_map(map);
+        self.get_normalized_word_frequencies(frequencies, max_freq)
+    }
+
+    fn get_normalized_word_frequencies(
+        &'a self,
+        frequencies: HashMap<&'a str, usize>,
+        max_freq: usize,
+    ) -> Vec<(&'a str, f32)> {
         if frequencies.is_empty() {
             return Vec::new();
         }
@@ -154,6 +173,12 @@ impl<'a> Tokenizer {
         }
 
         normalized_freqs
+    }
+
+    pub fn get_normalized_word_frequencies_text(&'a self, text: &'a str) -> Vec<(&'a str, f32)> {
+        let (frequencies, max_freq) = self.get_word_frequencies(text);
+
+        self.get_normalized_word_frequencies(frequencies, max_freq)
     }
 
     pub fn with_regex(mut self, value: Regex) -> Self {
@@ -208,7 +233,7 @@ mod tests {
         let words = "A a wood chuck could could Could ChuCK";
 
         let tokenizer = Tokenizer::default().with_repeat(true).with_max_words(12);
-        let frequencies = tokenizer.get_normalized_word_frequencies(words);
+        let frequencies = tokenizer.get_normalized_word_frequencies_text(words);
 
         let expected = vec![
             ("chuck", 1.0),
